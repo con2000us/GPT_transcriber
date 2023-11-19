@@ -9,6 +9,9 @@ import time
 with open('trans.json', 'w', encoding='utf-8') as file:
     file.write('')
 
+with open('trans_debug.txt', 'w', encoding='utf-8') as file:
+    file.write('')
+
 with open('moduel/key.txt', 'r') as file:
     key = file.read()
 client = OpenAI(
@@ -74,6 +77,7 @@ for batch in range(batches):
 
     # 步骤 5: 显示助手的回应并处理翻译结果
     messages = client.beta.threads.messages.list(thread_id=thread.id)
+    debug_trans = ""
 
     for message in messages.data:
         if message.role == "assistant":
@@ -83,33 +87,39 @@ for batch in range(batches):
                     text = content.text.value
                     text = text.replace('\\(', '(').replace('\\)', ')')
                     print(f"{text}")
+                    debug_trans += text + "\n"
 
                     translated_text = content.text.value
                     #translated_sentences = translated_text.split('\n')
                     translated_sentences = [line for line in translated_text.split('\n') if line.strip()]
 
-                    # 确保翻译后的句子数量与原始字幕中的句子数量相同
-                    # if len(translated_sentences) == len(batch_subtitles):
-                    #     for i, subtitle in enumerate(batch_subtitles):
-                    #         # 从翻译文本中移除时间戳
+                    # 移除非翻譯結果的內容
+                    i = len(translated_sentences) - 1
+                    while i >= 0:
+                        if "##" not in translated_sentences[i]:
+                            translated_sentences.pop(i)
+                        i -= 1
+
+                    # for i, subtitle in enumerate(batch_subtitles):
+                    #     # 从翻译文本中移除时间戳
+                    #     if 0 <= i < len(translated_sentences):
                     #         trans_text = translated_sentences[i].split('##')[1] if '##' in translated_sentences[i] else translated_sentences[i]
                     #         subtitle['trans'] = trans_text
-                    #         translated_subtitles.append(subtitle)
-                    # else:
-                    #     print(f'ERROR : {len(batch_subtitles)} -> {len(translated_sentences)}')
-                    #     print(f'Content : {translated_sentences}')
+                    #         translated_subtitles.append(subtitle)                    
                     # break
 
+                    for subtitle in batch_subtitles:
+                        for trans_sentence in translated_sentences:
+                            st, trans_text = trans_sentence.split('##', 1)  # 安全地分割字符串
+                            if str(subtitle['start']) == str(st):
+                                subtitle['trans'] = trans_text
+                                break  # 找到匹配项后跳出内层循环
 
-                    for i, subtitle in enumerate(batch_subtitles):
-                        # 从翻译文本中移除时间戳
-                        if 0 <= i < len(translated_sentences):
-                            trans_text = translated_sentences[i].split('##')[1] if '##' in translated_sentences[i] else translated_sentences[i]
-                            subtitle['trans'] = trans_text
-                            translated_subtitles.append(subtitle)
-                    
-                    break
+                        translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
             break
+
+    with open('trans_debug.txt', 'a', encoding='utf-8') as file:
+        file.write(debug_trans)
 
     # 将翻译后的字幕追加写入 JSON 文件
     with open('trans.json', 'a', encoding='utf-8') as file:
