@@ -100,14 +100,6 @@ for batch in range(batches):
                             translated_sentences.pop(i)
                         i -= 1
 
-                    # for i, subtitle in enumerate(batch_subtitles):
-                    #     # 从翻译文本中移除时间戳
-                    #     if 0 <= i < len(translated_sentences):
-                    #         trans_text = translated_sentences[i].split('##')[1] if '##' in translated_sentences[i] else translated_sentences[i]
-                    #         subtitle['trans'] = trans_text
-                    #         translated_subtitles.append(subtitle)                    
-                    # break
-
                     for subtitle in batch_subtitles:
                         for trans_sentence in translated_sentences:
                             st, trans_text = trans_sentence.split('##', 1)  # 安全地分割字符串
