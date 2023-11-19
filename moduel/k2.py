@@ -12,10 +12,9 @@ with open('trans.json', 'w', encoding='utf-8') as file:
 with open('trans_debug.txt', 'w', encoding='utf-8') as file:
     file.write('')
 
-with open('moduel/key.txt', 'r') as file:
+with open('moduel/API.key', 'r') as file:
     key = file.read()
 client = OpenAI(
-    #api_key="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",
     api_key=key,
 )
 
@@ -43,7 +42,7 @@ for batch in range(batches):
 
     # 构建消息内容，包括字幕文本
     subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in batch_subtitles])
-    message_content = "本句之後的內容是一段英文內容 ##前面的數值不須更動 只將後面英文內容翻譯成繁體中文 並保持一句英文對應一句翻譯的中文關係. \n" + subtitles_text
+    message_content = "本句之後的內容是一段字幕內容 ##前面的數值不須更動 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係. \n" + subtitles_text
     print(f"############################################################################################")
     print(f"{message_content}")
     print(f"--------------------------------------------------------------------------------------------")
@@ -102,9 +101,9 @@ for batch in range(batches):
 
                     for subtitle in batch_subtitles:
                         for trans_sentence in translated_sentences:
-                            st, trans_text = trans_sentence.split('##', 1)  # 安全地分割字符串
-                            if str(subtitle['start']) == str(st):
-                                subtitle['trans'] = trans_text
+                            token = trans_sentence.split('##') 
+                            if str(subtitle['start']) == str(token[0]):
+                                subtitle['trans'] = token[-1]
                                 break  # 找到匹配项后跳出内层循环
 
                         translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中

@@ -86,11 +86,6 @@ def group_array(arr):
     # 添加最后一组
     groups.append(current_group)
 
-    # 确保最后一组至少有4个元素
-    # if len(groups) > 1 and len(groups[-1]) < 4:
-    #     while len(groups[-1]) < 4:
-    #         groups[-1].insert(0, groups[-2].pop())
-
     return groups
 
 grouped_objects = group_array(problematic_subtitles)
@@ -98,20 +93,19 @@ for group in grouped_objects:
     print([obj['id'] for obj in group])
 
 ###########################################讓AI處理文句分段問題####################################################
-with open('moduel/key.txt', 'r') as file:
+
+with open('moduel/API.key', 'r') as file:
     key = file.read()
 client = OpenAI(
-    #api_key="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",
     api_key=key,
 )
 
 # 步骤 1: 创建一个助手
 assistant = client.beta.assistants.create(
     name="John Doe",
-    instructions="你是個英語翻譯，負責翻譯英文轉成文句通暢的中文",
+    instructions="你是個翻譯，負責翻譯外國字幕轉成文句通暢的中文",
     model="gpt-4-1106-preview"
 )
-
 
 def update_subtitles(subtitles, adj_sentences):
     for sentence in adj_sentences:
@@ -131,6 +125,7 @@ def update_subtitles(subtitles, adj_sentences):
 adj_subtitles = []  # 存储斷句后的字幕
 
 for group in grouped_objects:
+
     # 构建消息内容，包括字幕文本
     subtitles_text = "\n".join([f"{subtitle['id']}##{subtitle['text']}" for subtitle in group])
     message_content = "本句之後是一段英文內容 ##前面的數值不須更動 只將後面英文內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
