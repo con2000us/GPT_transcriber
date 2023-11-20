@@ -1,6 +1,9 @@
 import os
 import subprocess
 import sys
+import whisper
+from datetime import timedelta
+import json
 
 def scan_files(directory):
     # 支持的檔案格式
@@ -11,6 +14,39 @@ def scan_files(directory):
     media_files = [f for f in files if os.path.splitext(f)[1].lower() in video_extensions + audio_extensions]
 
     return media_files
+
+def identify_language(audio_path):
+    # 載入模型
+    model = whisper.load_model("medium")
+
+    # 處理音頻檔案
+    result = model.transcribe(audio_path)
+
+    # 獲取語言代碼
+    language_code = result["language"]
+
+    return language_code
+
+def format_time(seconds):
+    """将秒数格式化为 VTT 时间戳"""
+    return str(timedelta(seconds=seconds)).replace(".", ",")
+
+def generate_vtt(audio_path, model_size="large"):
+    model = whisper.load_model(model_size)
+    result = model.transcribe(audio_path, verbose=False)
+
+    with open("v_debug.vtt", "w", encoding="utf-8") as v_debug:
+        json.dump(result, v_debug, ensure_ascii=False, indent=4)
+
+    vtt_content = ""
+
+    for segment in result["segments"]:
+        start_time = format_time(segment["start"])
+        end_time = format_time(segment["end"])
+        text = segment["text"]
+        vtt_content += f"{start_time} --> {end_time}\n{text}\n\n"
+
+    return vtt_content
 
 def main():
     directory = '.'  # 當前目錄
@@ -47,12 +83,22 @@ def main():
 
     # 執行shell命令
     try:
-        subprocess.run(["python", "-m", "whisper", selected_file, "--model", "large"], check=True)
-        # 构建.vtt文件的路径
-        base_name = os.path.splitext(selected_file)[0]
-        vtt_file = base_name + '.vtt'
-        # 重命名.vtt文件
-        os.rename(vtt_file, 'v.vtt')
+        #print("語言偵測 : " + identify_language(selected_file))
+
+
+        # subprocess.run(["python", "-m", "whisper", selected_file, "--model", "medium"], check=True)
+        # # 构建.vtt文件的路径
+        # base_name = os.path.splitext(selected_file)[0]
+        # vtt_file = base_name + '.vtt'
+        # # 重命名.vtt文件
+        # os.rename(vtt_file, 'v.vtt')
+
+        vtt_text = generate_vtt(selected_file, model_size="medium")
+
+        # 将生成的 VTT 内容写入文件
+        with open("v.vtt", "w", encoding="utf-8") as file:
+            file.write(vtt_text)
+
     except subprocess.CalledProcessError as e:
         print(f"执行错误: {e}")
     except OSError as e:

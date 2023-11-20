@@ -5,6 +5,9 @@ from openai import OpenAI
 import json
 import time
 
+#AImodel = "gpt-4-1106-preview"
+AImodel = "gpt-3.5-turbo"
+
 # 在开始翻译之前清空 trans.json 文件
 with open('trans.json', 'w', encoding='utf-8') as file:
     file.write('')
@@ -22,30 +25,34 @@ client = OpenAI(
 assistant = client.beta.assistants.create(
     name="John Doe",
     instructions="你是個英語翻譯，負責翻譯英文轉成文句通暢的中文",
-    model="gpt-4-1106-preview"
+    model=AImodel
 )
 
 with open('adjusted_subtitles.json', 'r', encoding='utf-8') as file:
     subtitles = json.load(file)
 
 # 初始化变量
-sentences_per_batch = 20
+sentences_per_batch = 8
 total_sentences = len(subtitles)  # 获取实际的字幕数量
 batches = (total_sentences + sentences_per_batch - 1) // sentences_per_batch  # 计算需要的批次数量
 translated_subtitles = []  # 存储翻译后的字幕
 
+
 # 循环处理每个批次
 for batch in range(batches):
+
     start_index = batch * sentences_per_batch
     end_index = min(start_index + sentences_per_batch, total_sentences)  # 确保不超过字幕总数
     batch_subtitles = subtitles[start_index:end_index]
 
+    #print(json.dumps(batch_subtitles, ensure_ascii=False, indent=4))
     # 构建消息内容，包括字幕文本
     subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in batch_subtitles])
     message_content = "本句之後的內容是一段字幕內容 ##前面的數值不須更動 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係. \n" + subtitles_text
     print(f"############################################################################################")
     print(f"{message_content}")
     print(f"--------------------------------------------------------------------------------------------")
+
 
     # 步骤 2: 创建一个线程
     thread = client.beta.threads.create()
@@ -93,33 +100,38 @@ for batch in range(batches):
                     translated_sentences = [line for line in translated_text.split('\n') if line.strip()]
 
                     # 移除非翻譯結果的內容
+                    #print(json.dumps(translated_sentences, ensure_ascii=False, indent=4))
                     i = len(translated_sentences) - 1
                     while i >= 0:
-                        if "##" not in translated_sentences[i]:
+                        if len(translated_sentences[i].strip())<=1:
                             translated_sentences.pop(i)
                         i -= 1
 
-                    for subtitle in batch_subtitles:
-                        for trans_sentence in translated_sentences:
-                            token = trans_sentence.split('##') 
-                            if str(subtitle['start']) == str(token[0]):
-                                subtitle['trans'] = token[-1]
-                                break  # 找到匹配项后跳出内层循环
+                    for trans_sentence in translated_sentences:
+                        print(f"{trans_sentence}")
+                        if '##' in trans_sentence:
+                            for subtitle in batch_subtitles:
+                                #print(f"found ## in {trans_sentence}")
+                                token = trans_sentence.split('##') 
+                                if str(subtitle['start']) == str(token[0]):
+                                    subtitle['trans'] = token[-1]
+                                    break  # 找到匹配项后跳出内层循环
+                            translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
+                        else:
+                            guess = 0
+                            while guess < sentences_per_batch and 'trans' in batch_subtitles[guess]:
+                                guess += 1
 
-                        translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
+                            batch_subtitles[guess]['trans'] = trans_sentence
+                            translated_subtitles.append(batch_subtitles[guess])  # 将处理过的字幕添加到列表中
             break
 
-    with open('trans_debug.txt', 'a', encoding='utf-8') as file:
-        file.write(debug_trans)
+with open('trans_debug.txt', 'a', encoding='utf-8') as file:
+    file.write(debug_trans)
 
-    # 将翻译后的字幕追加写入 JSON 文件
-    with open('trans.json', 'a', encoding='utf-8') as file:
-        if batch == 0:
-            file.write('[')  # 文件开始
-        else:
-            file.write(',\n')  # 分隔不同批次的内容
+# 将翻译后的字幕追加写入 JSON 文件
+with open('trans.json', 'a', encoding='utf-8') as file:
+    print(json.dumps(translated_subtitles, ensure_ascii=False, indent=4))
+    #json.dump([subtitle for subtitle in translated_subtitles if 'trans' in subtitle], file, ensure_ascii=False, indent=4)
+    json.dump(translated_subtitles, file, ensure_ascii=False, indent=4)
 
-        json.dump([subtitle for subtitle in translated_subtitles if 'trans' in subtitle], file, ensure_ascii=False, indent=4)
-
-        if batch == batches - 1:
-            file.write(']')  # 文件结束

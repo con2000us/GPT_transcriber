@@ -129,17 +129,17 @@ if video_title:
 
     shutil.move(video_title+".mp4", output_path)
     shutil.move(video_title+'.cht.srt', output_path)
-    shutil.move('default.json', debug_path)
+    #shutil.move('default.json', debug_path)
 else:
     shutil.move(selected_file, output_path)
     shutil.move(os.path.splitext(selected_file)[0]+'.cht.srt', output_path)
-    shutil.move(os.path.splitext(selected_file)[0]+'.json', debug_path)
+    #shutil.move(os.path.splitext(selected_file)[0]+'.json', debug_path)
 
-os.rename(os.path.splitext(selected_file)[0]+'.srt', os.path.splitext(selected_file)[0]+'_origin.srt')
+#os.rename(os.path.splitext(selected_file)[0]+'.srt', os.path.splitext(selected_file)[0]+'_origin.srt')
 shutil.move("adjusted_subtitles.json", debug_path)
-shutil.move(os.path.splitext(selected_file)[0]+'_origin.srt', debug_path)
-shutil.move(os.path.splitext(selected_file)[0]+'.tsv', debug_path)
-shutil.move(os.path.splitext(selected_file)[0]+'.txt', debug_path)
+#shutil.move(os.path.splitext(selected_file)[0]+'_origin.srt', debug_path)
+#shutil.move(os.path.splitext(selected_file)[0]+'.tsv', debug_path)
+#shutil.move(os.path.splitext(selected_file)[0]+'.txt', debug_path)
 shutil.move('process.txt', debug_path)
 shutil.move('trans.json', debug_path)
 shutil.move('trans_debug.txt', debug_path)

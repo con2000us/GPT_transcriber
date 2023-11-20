@@ -7,18 +7,27 @@ import json
 import time
 
 inputfile = "v.vtt"
+#AImodel = "gpt-4-1106-preview"
+AImodel = "gpt-3.5-turbo"
 
 def time_to_seconds(time_str):
     """将时间字符串转换为秒"""
-    minutes, seconds = map(float, time_str.split(':'))
-    return minutes * 60 + seconds
+    hours, minutes, seconds_milliseconds = time_str.split(':')
+    if ',' in seconds_milliseconds:
+        seconds, milliseconds = map(int, seconds_milliseconds.split(','))
+    else:
+        seconds = int(seconds_milliseconds)
+        milliseconds = 0
+
+    return int(hours) * 3600 + int(minutes) * 60 + seconds + milliseconds / 1000000
 
 def parse_srt(file_content):
     """解析 SRT 文件内容"""
-    pattern = re.compile(r'(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})\n(.*?)\n\n', re.DOTALL)
+    pattern = re.compile(r'(\d{1,2}:\d{2}:\d{2}(?:,\d{6})?) --> (\d{1,2}:\d{2}:\d{2}(?:,\d{6})?)\n(.*?)\n\n', re.DOTALL)
     subtitles = []
 
     for match in pattern.finditer(file_content):
+        #print(match)
         start_str, end_str, text = match.groups()
         start = time_to_seconds(start_str)
         end = time_to_seconds(end_str)
@@ -45,24 +54,45 @@ subtitles = parse_srt(srt_content)
 # 将结果以 JSON 格式输出到屏幕
 #print(json.dumps(subtitles, ensure_ascii=False, indent=4))
 
-
 def check_subtitles(subtitles):
     # 新数组，用于存储连续的不符合条件的字幕对象
     continuous_subtitles = []
     # 用于计数连续不符合条件的字幕对象数量
     count = 0
+    count_flag = False
+
 
     for subtitle in subtitles:
         text = subtitle['text']
-        # 检查字幕文本是否不符合条件
-        if not (text.endswith('.') or text.endswith('!') or '. ' in text):
-            count += 1
-            # 当连续不符合条件的字幕达到4个时，开始复制
-            if count >= 4:
+
+        #是否已進入連續狀態
+        if count_flag:
+            #字句仍然連續 繼續加入處理陣列
+            if not (text.endswith('.') or text.endswith('!') or '. ' in text):
                 continuous_subtitles.append(subtitle)
+            else:
+                #不連續則中斷並改回flag
+                count_flag = False
         else:
-            # 如果当前字幕符合条件，则重置计数器
-            count = 0
+            if not (text.endswith('.') or text.endswith('!') or '. ' in text):
+                #發現開始有無標點字串 先加入處理陣列
+                continuous_subtitles.append(subtitle)
+                #已經超過三句連續 進入正式連續狀態
+                if count > 3:
+                    count = 0
+                    count_flag = True
+                else:
+                    #已經未過三句連續 繼續加總閾值
+                    count += 1
+            else:
+                #發現斷點 而且已經處於連續狀態
+                if count_flag:
+                    count_flag = False
+                else:
+                    #發現斷點 但最後加進的字串未達連續閾值 全回溯清除
+                    while count > 0:
+                        continuous_subtitles.pop()
+                        count -= 1
 
     return continuous_subtitles
 
@@ -77,20 +107,46 @@ def group_array(arr):
     current_group = []
 
     for item in arr:
-        if current_group and (item['id'] - current_group[-1]['id'] > 1 or len(current_group) >= 13):
-            groups.append(current_group)
-            current_group = [item]
-        else:
+        if not current_group:
+            # 如果当前组为空，直接添加元素
             current_group.append(item)
+        else:
+            # 检查当前元素的 id 是否与前一个元素的 id 连续
+            if item['id'] - current_group[-1]['id'] == 1:
+                current_group.append(item)
+            else:
+                # 如果不连续，将当前组添加到 groups，然后开始新的组
+                groups.append(current_group)
+                current_group = [item]
 
-    # 添加最后一组
-    groups.append(current_group)
+    # 添加最后一个组（如果有）
+    if current_group:
+        groups.append(current_group)
+
+    split_index = 13
+    index = 0
+    while True:
+        if len(groups[index]) >= 16:
+            cur_ele = groups.pop(index)
+            groups.insert(index,cur_ele[:split_index])
+            groups.insert(index+1,cur_ele[split_index:])
+        index += 1
+        #掃描完畢    
+        if index >= len(groups):
+            break
 
     return groups
 
-grouped_objects = group_array(problematic_subtitles)
-for group in grouped_objects:
-    print([obj['id'] for obj in group])
+if problematic_subtitles:
+    grouped_objects = group_array(problematic_subtitles)
+
+    for group in grouped_objects:
+        print([obj['id'] for obj in group])
+
+    if len(grouped_objects) == 1 and not grouped_objects[0]:
+        grouped_objects = []
+else:
+    grouped_objects = []
 
 ###########################################讓AI處理文句分段問題####################################################
 
@@ -104,30 +160,44 @@ client = OpenAI(
 assistant = client.beta.assistants.create(
     name="John Doe",
     instructions="你是個翻譯，負責翻譯外國字幕轉成文句通暢的中文",
-    model="gpt-4-1106-preview"
+    model=AImodel
 )
 
 def update_subtitles(subtitles, adj_sentences):
+    # for sentence in adj_sentences:
+    #     # 分割每行以获取开始时间和文本
+    #     if "##" in sentence:
+    #         sid, new_text = sentence.split("##")
+    #         iid = int(sid.strip())
+
+    #         # 在subtitles中查找匹配的开始时间
+    #         for subtitle in subtitles:
+    #             if int(subtitle["id"]) == iid:
+    #                 # 找到匹配项，更新text并保存旧的text
+    #                 subtitle["text_old"] = subtitle["text"]
+    #                 subtitle["text"] = new_text.strip()
+    #                 break
+
     for sentence in adj_sentences:
         # 分割每行以获取开始时间和文本
         if "##" in sentence:
-            sid, new_text = sentence.split("##")
-            iid = int(sid.strip())
+            token = sentence.split("##")
+            sst = token[0].strip()
 
             # 在subtitles中查找匹配的开始时间
             for subtitle in subtitles:
-                if int(subtitle["id"]) == iid:
+                if str(subtitle["start"]) == str(sst):
                     # 找到匹配项，更新text并保存旧的text
                     subtitle["text_old"] = subtitle["text"]
-                    subtitle["text"] = new_text.strip()
+                    subtitle["text"] = token[-1]
                     break
 
-adj_subtitles = []  # 存储斷句后的字幕
+#adj_subtitles = []  # 存储斷句后的字幕
 
 for group in grouped_objects:
 
     # 构建消息内容，包括字幕文本
-    subtitles_text = "\n".join([f"{subtitle['id']}##{subtitle['text']}" for subtitle in group])
+    subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in group])
     message_content = "本句之後是一段英文內容 ##前面的數值不須更動 只將後面英文內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
     print(f"############################################################################################")
     print(f"{message_content}")
@@ -169,6 +239,7 @@ for group in grouped_objects:
                     # 顯示斷句內容
                     text = content.text.value
                     text = text.replace('\\(', '(').replace('\\)', ')')
+                    print(text)
                     
                     adj_text = content.text.value
                     #translated_sentences = translated_text.split('\n')
@@ -176,6 +247,9 @@ for group in grouped_objects:
 
                     update_subtitles(subtitles, adj_sentences)
 
+#print({subtitles})
+#with open('adjusted_subtitles_debug.json', 'w', encoding='utf-8') as debug_file:
+#    json.dump(subtitles, debug_file, ensure_ascii=False, indent=4)
 
 #################################################################################################################
 
@@ -186,7 +260,7 @@ def split_subtitle(subtitle):
     end = subtitle['end']
 
     # 检查文本是否包含句号
-    if '. ' or '! ' in text:
+    if '. ' or '! ' or '? ' in text:
         # 根据句号分割文本
         sentences = re.split(r'[.!?]\s', text)
         split_subtitles = []
@@ -223,6 +297,7 @@ for subtitle in subtitles:
 
 # 输出结果
 # print(json.dumps(split_subtitles, ensure_ascii=False, indent=4))
+
 
 def merge_subtitles(subtitles):
     merged_subtitles = []
@@ -273,9 +348,6 @@ def round_timestamps(subtitles):
 
 # 应用四舍五入函数
 rounded_subtitles = round_timestamps(merged_subtitles)
-
-# 输出结果
-print(json.dumps(rounded_subtitles, ensure_ascii=False, indent=4))
 
 # 将处理后的字幕数据写入 JSON 文件
 with open('adjusted_subtitles.json', 'w', encoding='utf-8') as json_file:
