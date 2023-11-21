@@ -131,7 +131,6 @@ with open('trans_debug.txt', 'a', encoding='utf-8') as file:
 
 # 将翻译后的字幕追加写入 JSON 文件
 with open('trans.json', 'a', encoding='utf-8') as file:
-    print(json.dumps(translated_subtitles, ensure_ascii=False, indent=4))
     #json.dump([subtitle for subtitle in translated_subtitles if 'trans' in subtitle], file, ensure_ascii=False, indent=4)
     json.dump(translated_subtitles, file, ensure_ascii=False, indent=4)
 

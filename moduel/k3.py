@@ -28,7 +28,7 @@ with open('trans.json', 'r', encoding='utf-8') as file:
 
 # 处理嵌套的 JSON 结构
 #flattened_subtitles = [item for sublist in subtitles for item in sublist]
-print(json.dumps(subtitles, ensure_ascii=False, indent=4))
+#print(json.dumps(subtitles, ensure_ascii=False, indent=4))
 
 with open('process.txt', 'r') as file:
     selected_file = file.read()

@@ -35,9 +35,6 @@ def generate_vtt(audio_path, model_size="large"):
     model = whisper.load_model(model_size)
     result = model.transcribe(audio_path, verbose=False)
 
-    with open("v_debug.vtt", "w", encoding="utf-8") as v_debug:
-        json.dump(result, v_debug, ensure_ascii=False, indent=4)
-
     vtt_content = ""
 
     for segment in result["segments"]:
