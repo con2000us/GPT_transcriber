@@ -4,15 +4,17 @@
 import json
 import os
 import shutil
+import config_reader
+
+config = config_reader.config
 
 def convert_to_srt(json_data):
     srt_format = ""
     for i, entry in enumerate(json_data, start=1):
-        print(i)
-        print(entry)
         start_time = format_time(entry['start'])
         end_time = format_time(entry['end'])
-        text = entry['trans'].replace('\n', '\n')
+        if 'trans' in entry:
+            text = entry['trans'].replace('\n', '\n')
         srt_format += f"{i}\n{start_time} --> {end_time}\n{text}\n\n"
     return srt_format
 

@@ -4,6 +4,12 @@ import sys
 import whisper
 from datetime import timedelta
 import json
+import config_reader
+
+config = config_reader.config
+
+def str_to_bool(s):
+    return s.lower() in ['true', '1', 't', 'y', 'yes'] 
 
 def scan_files(directory):
     # 支持的檔案格式
@@ -17,7 +23,7 @@ def scan_files(directory):
 
 def identify_language(audio_path):
     # 載入模型
-    model = whisper.load_model("medium")
+    model = whisper.load_model(config.lngDetctModel)
 
     # 處理音頻檔案
     result = model.transcribe(audio_path)
@@ -32,7 +38,7 @@ def format_time(seconds):
     return str(timedelta(seconds=seconds)).replace(".", ",")
 
 def generate_vtt(audio_path, model_size="large"):
-    model = whisper.load_model(model_size)
+    model = whisper.load_model(config.whisperModel )
     result = model.transcribe(audio_path, verbose=False)
 
     vtt_content = ""
@@ -90,7 +96,7 @@ def main():
         # # 重命名.vtt文件
         # os.rename(vtt_file, 'v.vtt')
 
-        vtt_text = generate_vtt(selected_file, model_size="medium")
+        vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
 
         # 将生成的 VTT 内容写入文件
         with open("v.vtt", "w", encoding="utf-8") as file:

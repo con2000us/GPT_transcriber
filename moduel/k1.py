@@ -5,10 +5,12 @@ from openai import OpenAI
 import re
 import json
 import time
+import config_reader
+
+config = config_reader.config
 
 inputfile = "v.vtt"
-#AImodel = "gpt-4-1106-preview"
-AImodel = "gpt-3.5-turbo"
+
 
 def time_to_seconds(time_str):
     """将时间字符串转换为秒"""
@@ -160,7 +162,7 @@ client = OpenAI(
 assistant = client.beta.assistants.create(
     name="John Doe",
     instructions="你是個翻譯，負責翻譯外國字幕轉成文句通暢的中文",
-    model=AImodel
+    model=config.AIModel
 )
 
 def update_subtitles(subtitles, adj_sentences):
@@ -262,7 +264,7 @@ def split_subtitle(subtitle):
     # 检查文本是否包含句号
     if '. ' or '! ' or '? ' in text:
         # 根据句号分割文本
-        sentences = re.split(r'[.!?]\s', text)
+        sentences = re.split(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)\. ', text)
         split_subtitles = []
 
         # 计算每个句子的时间戳
@@ -298,6 +300,10 @@ for subtitle in subtitles:
 # 输出结果
 # print(json.dumps(split_subtitles, ensure_ascii=False, indent=4))
 
+def is_end_of_sentence(text):
+    # 檢查文本是否以非縮寫的句號、驚嘆號或問號結尾
+    return re.search(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)(?<!\bSt)\.(?!\w)|[!?]$', text) is not None
+
 
 def merge_subtitles(subtitles):
     merged_subtitles = []
@@ -310,7 +316,7 @@ def merge_subtitles(subtitles):
         end = current_subtitle['end']
 
         # 合并直到找到以句号结尾的文本
-        while not text.endswith(('.', '!', '?')) and i < len(subtitles) - 1:
+        while not is_end_of_sentence(text) and i < len(subtitles) - 1:
             i += 1
             next_subtitle = subtitles[i]
             text += ' ' + next_subtitle['text']
