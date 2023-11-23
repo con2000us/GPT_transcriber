@@ -59,6 +59,8 @@ subtitles = parse_srt(srt_content)
 def check_subtitles(subtitles):
     # 新数组，用于存储连续的不符合条件的字幕对象
     continuous_subtitles = []
+    if not config.lineArrange:
+        return continuous_subtitles
     # 用于计数连续不符合条件的字幕对象数量
     count = 0
     count_flag = False
@@ -162,23 +164,10 @@ client = OpenAI(
 assistant = client.beta.assistants.create(
     name="John Doe",
     instructions="你是個翻譯，負責翻譯外國字幕轉成文句通暢的中文",
-    model=config.AIModel
+    model=config.splitLineModel
 )
 
 def update_subtitles(subtitles, adj_sentences):
-    # for sentence in adj_sentences:
-    #     # 分割每行以获取开始时间和文本
-    #     if "##" in sentence:
-    #         sid, new_text = sentence.split("##")
-    #         iid = int(sid.strip())
-
-    #         # 在subtitles中查找匹配的开始时间
-    #         for subtitle in subtitles:
-    #             if int(subtitle["id"]) == iid:
-    #                 # 找到匹配项，更新text并保存旧的text
-    #                 subtitle["text_old"] = subtitle["text"]
-    #                 subtitle["text"] = new_text.strip()
-    #                 break
 
     for sentence in adj_sentences:
         # 分割每行以获取开始时间和文本
@@ -194,13 +183,12 @@ def update_subtitles(subtitles, adj_sentences):
                     subtitle["text"] = token[-1]
                     break
 
-#adj_subtitles = []  # 存储斷句后的字幕
 
 for group in grouped_objects:
 
     # 构建消息内容，包括字幕文本
     subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in group])
-    message_content = "本句之後是一段英文內容 ##前面的數值不須更動 只將後面英文內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
+    message_content = "本句之後是一段字幕內容 ##前面的數值不須更動而且必須保留 只將後面內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
     print(f"############################################################################################")
     print(f"{message_content}")
     print(f"--------------------------------------------------------------------------------------------")
@@ -232,7 +220,7 @@ for group in grouped_objects:
             break
         time.sleep(1)  # 等待一秒再次检查
 
-    # 步骤 5: 显示助手的回应并处理翻译结果
+    # 步骤 5: 显示助手的回应并处理结果
     messages = client.beta.threads.messages.list(thread_id=thread.id)
     for message in messages.data:
         if message.role == "assistant":
@@ -249,11 +237,7 @@ for group in grouped_objects:
 
                     update_subtitles(subtitles, adj_sentences)
 
-#print({subtitles})
-#with open('adjusted_subtitles_debug.json', 'w', encoding='utf-8') as debug_file:
-#    json.dump(subtitles, debug_file, ensure_ascii=False, indent=4)
 
-#################################################################################################################
 
 def split_subtitle(subtitle):
     """根据句号分割字幕，并调整时间戳"""
@@ -262,9 +246,9 @@ def split_subtitle(subtitle):
     end = subtitle['end']
 
     # 检查文本是否包含句号
-    if '. ' or '! ' or '? ' in text:
+    if '. ' or '! ' or '? ' or '。' in text:
         # 根据句号分割文本
-        sentences = re.split(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)\. ', text)
+        sentences = re.split(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)\. |[!?。]', text)
         split_subtitles = []
 
         # 计算每个句子的时间戳
@@ -302,12 +286,15 @@ for subtitle in subtitles:
 
 def is_end_of_sentence(text):
     # 檢查文本是否以非縮寫的句號、驚嘆號或問號結尾
-    return re.search(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)(?<!\bSt)\.(?!\w)|[!?]$', text) is not None
+    return re.search(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)(?<!\bSt)\.(?!\w)|[!?。]$', text) is not None
 
 
 def merge_subtitles(subtitles):
     merged_subtitles = []
     i = 0
+
+    if not config.lineArrange:
+        return subtitles
 
     while i < len(subtitles):
         current_subtitle = subtitles[i]

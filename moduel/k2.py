@@ -93,7 +93,6 @@ for batch in range(batches):
                         # 顯示翻譯進度
                         text = content.text.value
                         text = text.replace('\\(', '(').replace('\\)', ')')
-                        print(f"{text}")
                         debug_trans += text + "\n"
 
                         translated_text = content.text.value
