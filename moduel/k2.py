@@ -5,6 +5,7 @@ from openai import OpenAI
 import json
 import time
 import config_reader
+import re
 
 config = config_reader.config
 
@@ -50,7 +51,7 @@ for batch in range(batches):
         #print(json.dumps(batch_subtitles, ensure_ascii=False, indent=4))
         # 构建消息内容，包括字幕文本
         subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in batch_subtitles])
-        message_content = "本句之後的內容是一段字幕內容 ##前面的數值不須更動 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係. \n" + subtitles_text
+        message_content = "本句之後的內容是一段字幕內容 ##前面的數值與##本身不須更動並且必須保留 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係. \n" + subtitles_text
         print(f"############################################################################################")
         print(f"{message_content}")
         print(f"--------------------------------------------------------------------------------------------")
@@ -109,11 +110,13 @@ for batch in range(batches):
 
                         for trans_sentence in translated_sentences:
                             print(f"{trans_sentence}")
-                            if '##' in trans_sentence:
+                            # 正則表達式匹配一個數字（整數或浮點數）後跟著 '##'
+                            pattern = r'\b\d+(\.\d+)?##'
+                            if re.search(pattern, trans_sentence):
                                 for subtitle in batch_subtitles:
                                     #print(f"found ## in {trans_sentence}")
                                     token = trans_sentence.split('##') 
-                                    if str(subtitle['start']) == str(token[0]):
+                                    if str(subtitle['start']) == str(token[0]) and len(token[1].strip()) > 0:
                                         subtitle['trans'] = token[-1]
                                         break  # 找到匹配项后跳出内层循环
                                 translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中

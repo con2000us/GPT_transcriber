@@ -188,7 +188,7 @@ for group in grouped_objects:
 
     # 构建消息内容，包括字幕文本
     subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in group])
-    message_content = "本句之後是一段字幕內容 ##前面的數值不須更動而且必須保留 只將後面內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
+    message_content = "本句之後是一段字幕內容 ##前面的數值與##本身不須更動並且必須保留 只將後面內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
     print(f"############################################################################################")
     print(f"{message_content}")
     print(f"--------------------------------------------------------------------------------------------")
@@ -248,7 +248,7 @@ def split_subtitle(subtitle):
     # 检查文本是否包含句号
     if '. ' or '! ' or '? ' or '。' in text:
         # 根据句号分割文本
-        sentences = re.split(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)\. |[!?。]', text)
+        sentences = re.split(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)\. |[!?。] ', text)
         split_subtitles = []
 
         # 计算每个句子的时间戳

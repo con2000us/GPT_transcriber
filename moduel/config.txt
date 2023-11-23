@@ -7,20 +7,20 @@ LngDetctEnable = false
 # 語言偵測模型選項 ['tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 'large-v1', 'large-v2', 'large-v3', 'large']
 LngDetctModel = 3
 
-# 開啟語言偵測
+# 開啟斷句重組
 LineArrangeEnable = false
 
 # 分句(加標點符號)模型選項 0=gpt-3.5-turbo,	1=gpt-4,	2=gpt-4-1106-preview
-SplitLineModel = 2
+SplitLineModel = 0
 
 # 翻譯模型選項 0=gpt-3.5-turbo,	1=gpt-4,	2=gpt-4-1106-preview
-AImodel = 2
+AImodel = 0
 
 # 強制GPT標準回應 (如果回應不符則重新提request)
 ForcedTimeStamp = true
 
 # 強制GPT標準回應容許值 (對單一批次翻譯重送request次數上限)
-MaxReqTime = 5
+MaxReqTime = 8
 
 
 #同一資料夾下放置API.key檔案 內放一行openAI API key
