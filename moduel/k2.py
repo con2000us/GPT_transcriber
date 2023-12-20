@@ -33,7 +33,7 @@ with open('adjusted_subtitles.json', 'r', encoding='utf-8') as file:
     subtitles = json.load(file)
 
 # 初始化变量
-sentences_per_batch = 8
+sentences_per_batch = 10
 total_sentences = len(subtitles)  # 获取实际的字幕数量
 batches = (total_sentences + sentences_per_batch - 1) // sentences_per_batch  # 计算需要的批次数量
 translated_subtitles = []  # 存储翻译后的字幕
@@ -52,10 +52,14 @@ for batch in range(batches):
         # 构建消息内容，包括字幕文本
         subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in batch_subtitles])
         message_content = "本句之後的內容是一段字幕內容 ##前面的數值與##本身不須更動並且必須保留 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係. \n" + subtitles_text
-        print(f"############################################################################################")
-        print(f"{message_content}")
-        print(f"--------------------------------------------------------------------------------------------")
+        print(f"########################################## {batch + 1} / {batches} ##################################################")
+        # print(f"{message_content}")
+        print(f"{subtitles_text}")
+        print(f"------------------------------------------ {batch + 1} / {batches} --------------------------------------------------")
 
+        debug_trans += "############################################################################################\n"
+        debug_trans += subtitles_text
+        debug_trans += "\n--------------------------------------------------------------------------------------------\n"
 
         # 步骤 2: 创建一个线程
         thread = client.beta.threads.create()
@@ -71,7 +75,7 @@ for batch in range(batches):
         run = client.beta.threads.runs.create(
             thread_id=thread.id,
             assistant_id=assistant.id,
-            instructions="Please address the user as Jane Doe. The user has a premium account."
+            instructions="##前面的數值與##本身不須更動並且必須保留 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係."
         )
 
         # 检查运行状态
@@ -101,17 +105,25 @@ for batch in range(batches):
                         translated_sentences = [line for line in translated_text.split('\n') if line.strip()]
 
                         # 移除非翻譯結果的內容
-                        #print(json.dumps(translated_sentences, ensure_ascii=False, indent=4))
+                        pattern = r'\b\d+(\.\d+)?##'
+                        sharpNum = sum(1 for sentence in translated_sentences if re.search(pattern, sentence))
+
                         i = len(translated_sentences) - 1
+                        inputLines = len(subtitles_text.split("\n"))
+                        # print(f"sharpNum : {sharpNum}, inputLines : {inputLines}")
                         while i >= 0:
                             if len(translated_sentences[i].strip())<=1:
                                 translated_sentences.pop(i)
+                            # 假如API傳回無意義字串 其他字串有時間戳 則將無意義字串刪除
+                            if(sharpNum == inputLines and re.search(pattern, translated_sentences[i]) is None):
+                                translated_sentences.pop(i)
                             i -= 1
 
+                        # 正則表達式匹配一個數字（整數或浮點數）後跟著 '##'
+                        
+                        
                         for trans_sentence in translated_sentences:
-                            print(f"{trans_sentence}")
-                            # 正則表達式匹配一個數字（整數或浮點數）後跟著 '##'
-                            pattern = r'\b\d+(\.\d+)?##'
+                            print(f"{trans_sentence}")                            
                             if re.search(pattern, trans_sentence):
                                 for subtitle in batch_subtitles:
                                     #print(f"found ## in {trans_sentence}")
@@ -131,7 +143,21 @@ for batch in range(batches):
                                 translated_subtitles.append(batch_subtitles[guess])  # 将处理过的字幕添加到列表中
                 break
 
+        # 檢查行數是否對應正確
+        inputLines = subtitles_text.split("\n")
+        if len(translated_sentences) != len(inputLines):
+            if currentReq >= config.maxReqTime:  # maxRetryLimit 是您設定的最大重試次數
+                print(f"{len(inputLines)} -> {len(translated_sentences)}翻譯行數不符，但已達到最大重試次數。")
+
+            print(f"{len(inputLines)} -> {len(translated_sentences)}翻譯行數不符，正在重新嘗試...")
+            
+            debug_trans += "\n翻譯行數不符，正在重新嘗試...\n"
+            currentReq += 1
+            continue  # 重新進入迴圈進行請求
+
         if '##' in trans_sentence or not config.forceMatch or currentReq > config.maxReqTime:
+            if currentReq > config.maxReqTime:
+                currentReq = 0
             break
 
 with open('trans_debug.txt', 'a', encoding='utf-8') as file:

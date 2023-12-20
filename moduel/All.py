@@ -6,6 +6,7 @@ from pytube import YouTube
 import string
 import math
 import config_reader
+import unicodedata
 
 config = config_reader.config
 
@@ -27,8 +28,11 @@ def get_resolution_streams(streams):
 
 # 清理文件名函数
 def clean_filename(filename):
-    valid_chars = "-_() %s%s" % (string.ascii_letters, string.digits)
-    return ''.join(c for c in filename if c in valid_chars)
+    # 定义不允许的特殊字符
+    invalid_chars = '/\\:*?"<>|.'
+    # 使用 unicodedata.category 获取字符的通用类别，然后过滤掉控制字符（如换行符）
+    cleaned_filename = ''.join(c for c in filename if unicodedata.category(c)[0] != 'C' and c not in invalid_chars)
+    return cleaned_filename
 
 def get_resolution_streams(streams):
     """ 获取所有可用的解析度选项 """
@@ -57,6 +61,7 @@ if url:
         yt = YouTube(url, on_progress_callback=show_progress_bar)
         # 获取视频标题并清理
         video_title = clean_filename(yt.title)
+        print(f"Video title : {video_title}")
 
         # 获取所有可用的解析度
         available_resolutions = get_resolution_streams(yt.streams.filter(progressive=True, file_extension='mp4'))
@@ -141,3 +146,5 @@ shutil.move('process.txt', debug_path)
 shutil.move('trans.json', debug_path)
 shutil.move('trans_debug.txt', debug_path)
 shutil.move('v.vtt', debug_path)
+
+print(f"字幕轉換處理完成")

@@ -86,15 +86,6 @@ def main():
 
     # 執行shell命令
     try:
-        #print("語言偵測 : " + identify_language(selected_file))
-
-
-        # subprocess.run(["python", "-m", "whisper", selected_file, "--model", "medium"], check=True)
-        # # 构建.vtt文件的路径
-        # base_name = os.path.splitext(selected_file)[0]
-        # vtt_file = base_name + '.vtt'
-        # # 重命名.vtt文件
-        # os.rename(vtt_file, 'v.vtt')
 
         vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
 

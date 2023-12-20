@@ -11,6 +11,10 @@ config = config_reader.config
 
 inputfile = "v.vtt"
 
+with open('period_debug.txt', 'w', encoding='utf-8') as file:
+    file.write('')
+
+debug_text = ""
 
 def time_to_seconds(time_str):
     """将时间字符串转换为秒"""
@@ -183,60 +187,101 @@ def update_subtitles(subtitles, adj_sentences):
                     subtitle["text"] = token[-1]
                     break
 
+def evalResult(text, lineNum):
+    print("*****資料合法性解析*****")
+    returnLines = []
+    for line in text:
+        cleaned_line = line.strip('"')
+        pattern = r"^(\d+(\.\d{1,2})?)[^a-zA-Z]*"
+        match = re.match(pattern, line)
+        if match:
+            fixed_line = re.sub(pattern, r"\1##", cleaned_line)
+            print(cleaned_line + "  匹配後結果 : ")
+            print(fixed_line + "\n")
+            returnLines.append(fixed_line)
+        else:
+            print(cleaned_line + "  無匹配")
+    return returnLines
 
-for group in grouped_objects:
+for idx, group in enumerate(grouped_objects, start=1):
 
-    # 构建消息内容，包括字幕文本
-    subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in group])
-    message_content = "本句之後是一段字幕內容 ##前面的數值與##本身不須更動並且必須保留 只將後面內容補上標點符號 讓句子盡量不超過20個單字.另外不要使用省略號 \n" + subtitles_text
-    print(f"############################################################################################")
-    print(f"{message_content}")
-    print(f"--------------------------------------------------------------------------------------------")
+    passFlag = True
+    currentReq = 0
+    tempReault = []
+    while passFlag:
+        currentReq += 1
+        # 构建消息内容，包括字幕文本
+        subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in group])
+        message_content = "本句之後是一段字幕內容 ##前面的數值與##本身不須更動並且必須保留 觀察每句的前後文然後將文章補上標點符號 另外注意每行的結尾不一定是整句的結尾,請仔細觀察前後文的內容再決定句號的位置. 另外不要使用省略號 \n" + subtitles_text
+        print(f"############################################# {idx} / {len(grouped_objects)} ###############################################")
+        # print(f"{message_content}")
+        print(f"{subtitles_text}")
+        print(f"--------------------------------------------- {idx} / {len(grouped_objects)} -----------------------------------------------")
 
-    # 步骤 2: 创建一个线程
-    thread = client.beta.threads.create()
+        debug_text += f"############################################# {idx} / {len(grouped_objects)} ###############################################\n"
+        debug_text += subtitles_text + "\n"
+        debug_text += f"--------------------------------------------- {idx} / {len(grouped_objects)} -----------------------------------------------\n"
 
-    # 步骤 3: 向线程添加一条消息
-    message = client.beta.threads.messages.create(
-        thread_id=thread.id,
-        role="user",
-        content=message_content
-    )
+        # 步骤 2: 创建一个线程
+        thread = client.beta.threads.create()
 
-    # 步骤 4: 运行助手
-    run = client.beta.threads.runs.create(
-        thread_id=thread.id,
-        assistant_id=assistant.id,
-        instructions="Please address the user as Jane Doe. The user has a premium account."
-    )
-
-    # 检查运行状态
-    while True:
-        run = client.beta.threads.runs.retrieve(
+        # 步骤 3: 向线程添加一条消息
+        message = client.beta.threads.messages.create(
             thread_id=thread.id,
-            run_id=run.id
+            role="user",
+            content=message_content
         )
-        if run.status == 'completed':
-            break
-        time.sleep(1)  # 等待一秒再次检查
 
-    # 步骤 5: 显示助手的回应并处理结果
-    messages = client.beta.threads.messages.list(thread_id=thread.id)
-    for message in messages.data:
-        if message.role == "assistant":
-            for content in message.content:
-                if content.type == 'text':
-                    # 顯示斷句內容
-                    text = content.text.value
-                    text = text.replace('\\(', '(').replace('\\)', ')')
-                    print(text)
-                    
-                    adj_text = content.text.value
-                    #translated_sentences = translated_text.split('\n')
-                    adj_sentences = [line for line in adj_text.split('\n') if line.strip()]
+        # 步骤 4: 运行助手
+        run = client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=assistant.id,
+            # instructions="Please address the user as Jane Doe. The user has a premium account."
+            instructions="這些句子沒有適當的標點符號 請觀察每句的前後文然後在適合的文句補上標點符號(注意! 每行的結尾不一定是整句的結尾,請仔細觀察前後文的內容) 讓每句子盡量不超過20個單字.另外不要使用省略號"
+        )
 
-                    update_subtitles(subtitles, adj_sentences)
+        # 检查运行状态
+        while True:
+            run = client.beta.threads.runs.retrieve(
+                thread_id=thread.id,
+                run_id=run.id
+            )
+            if run.status == 'completed':
+                break
+            time.sleep(1)  # 等待一秒再次检查
 
+        # 步骤 5: 显示助手的回应并处理结果
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        for message in messages.data:
+            if message.role == "assistant":
+                for content in message.content:
+                    if content.type == 'text':
+                        # 顯示斷句內容
+                        text = content.text.value
+                        text = text.replace('\\(', '(').replace('\\)', ')')
+                        # print(text)
+                        
+                        adj_text = content.text.value
+                        adj_sentences = [line for line in adj_text.split('\n') if line.strip()]
+
+                        debug_text += text + "\n" + f"建議行數 : {len(group)}\n"
+                        print(adj_text + f"\n建議行數 : {len(group)}\n")
+                        fixed_sentences = evalResult(adj_sentences,len(group))
+                        print("...................................................................")
+                        print(f"{fixed_sentences}\n合法行數 : {len(fixed_sentences)}\n")
+                        #update_subtitles(subtitles, adj_sentences)
+                        if len(fixed_sentences) == len(group):
+                            update_subtitles(subtitles, fixed_sentences)
+                            passFlag = False
+                            break
+                        else:
+                            if currentReq > config.maxReqTime:
+                                update_subtitles(subtitles, max(tempReault, key=len))
+                                passFlag = False
+                                break
+                            else:
+                                tempReault.append(fixed_sentences)
+                            continue
 
 
 def split_subtitle(subtitle):
@@ -341,6 +386,9 @@ def round_timestamps(subtitles):
 
 # 应用四舍五入函数
 rounded_subtitles = round_timestamps(merged_subtitles)
+
+with open('period_debug.txt', 'w', encoding='utf-8') as file:
+    file.write(debug_text)
 
 # 将处理后的字幕数据写入 JSON 文件
 with open('adjusted_subtitles.json', 'w', encoding='utf-8') as json_file:
