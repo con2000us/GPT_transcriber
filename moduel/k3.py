@@ -1,5 +1,5 @@
-## input : trans.json
-## output : trans.srt
+## input : config.AITranslationFile
+## output : srt
 
 import json
 import os
@@ -25,14 +25,14 @@ def format_time(seconds):
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02},{milliseconds:03}"
 
 # 读取 JSON 数据
-with open('trans.json', 'r', encoding='utf-8') as file:
+with open(config.AITranslationFile, 'r', encoding='utf-8') as file:
     subtitles = json.load(file)
 
 # 处理嵌套的 JSON 结构
 #flattened_subtitles = [item for sublist in subtitles for item in sublist]
 #print(json.dumps(subtitles, ensure_ascii=False, indent=4))
 
-with open('process.txt', 'r') as file:
+with open(config.workingFile, 'r') as file:
     selected_file = file.read()
 
 # 转换为 SRT 格式

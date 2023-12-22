@@ -102,7 +102,7 @@ print("*****開始解讀字幕*****")
 if not run_script('moduel/k1.py'):
     exit(1)
 
-with open('process.txt', 'r') as file:
+with open(config.workingFile, 'r') as file:
     selected_file = file.read()
 
 print("*****開始翻譯成中文*****")
@@ -141,10 +141,11 @@ else:
     shutil.move(selected_file, output_path)
     shutil.move(os.path.splitext(selected_file)[0]+'.cht.srt', output_path)
 
-shutil.move("adjusted_subtitles.json", debug_path)
-shutil.move('process.txt', debug_path)
-shutil.move('trans.json', debug_path)
-shutil.move('trans_debug.txt', debug_path)
-shutil.move('v.vtt', debug_path)
+shutil.move(config.AIPunctuationLog, debug_path)
+shutil.move(config.AIPunctuationFile, debug_path)
+shutil.move(config.workingFile, debug_path)
+shutil.move(config.AITranslationFile, debug_path)
+shutil.move(config.AITranslationLog, debug_path)
+shutil.move(config.whisperFile, debug_path)
 
 print(f"字幕轉換處理完成")

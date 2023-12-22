@@ -59,8 +59,7 @@ def main():
     # 检查是否存在 default.mp4
     if 'default.mp4' in media_files:
         selected_file = 'default.mp4'
-
-        with open('process.txt', 'w') as file:
+        with open(config.workingFile, 'w') as file:
             file.write(selected_file)
     if not media_files:
         print("沒有找到任何媒體檔案。")
@@ -78,7 +77,7 @@ def main():
             try:
                 selected_file = media_files[int(choice) - 1]
 
-                with open('process.txt', 'w') as file:
+                with open(config.workingFile, 'w') as file:
                     file.write(selected_file)
             except (IndexError, ValueError):
                 print("無效的選擇。")
@@ -90,7 +89,7 @@ def main():
         vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
 
         # 将生成的 VTT 内容写入文件
-        with open("v.vtt", "w", encoding="utf-8") as file:
+        with open(config.whisperFile, "w", encoding="utf-8") as file:
             file.write(vtt_text)
 
     except subprocess.CalledProcessError as e:

@@ -1,3 +1,5 @@
+########注意! 在同一資料夾下新增名為"API.key"的檔案 內放一行openAI API key讓openAI API接口識別########
+
 # 轉綠語言模型選項 ['tiny.en', 'tiny', 'base.en', 'base', 'small.en', 'small', 'medium.en', 'medium', 'large-v1', 'large-v2', 'large-v3', 'large']
 WhisperModel = 6
 
@@ -22,5 +24,25 @@ ForcedTimeStamp = true
 # 強制GPT標準回應容許值 (對單一批次翻譯重送request次數上限)
 MaxReqTime = 5
 
+#########檔名設定 如無必要不須更動###########
 
-########同一資料夾下新增名為"API.key"的檔案 內放一行openAI API key
+#当前正在处理的文件名
+workingFile = "current_processing_filename.txt"
+
+#该文件是从视频内容經過whisper转录得到的字幕文件
+whisperFile = "video_transcription.vtt"
+
+#用来记录添加标点符号到字幕的过程，作为程序调试用途
+AIPunctuationLog = "punctuation_log.txt"
+
+#字幕内容被重新组织成完整句子，并保存为 JSON 格
+AIPunctuationFile = "restructured_sentences_subtitles.json"
+
+#记录字幕翻译过程的日志信息
+AITranslationLog = "translation_process_log.txt"
+
+# JSON 文件包含的是翻译后的字幕内容
+AITranslationFile = "translated_subtitles.json"
+
+#最终的翻译字幕文件，并采用了通用的 SRT 格式 (目前無作用)
+translatedSRT = "final_translated_subtitles.srt"

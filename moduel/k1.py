@@ -1,5 +1,5 @@
-## input : v.vtt
-## output : adjusted_subtitles.json
+## input : config.whisperFile
+## output : config.AIPunctuationFile
 
 from openai import OpenAI
 import re
@@ -9,9 +9,9 @@ import config_reader
 
 config = config_reader.config
 
-inputfile = "v.vtt"
+inputfile = config.whisperFile
 
-with open('period_debug.txt', 'w', encoding='utf-8') as file:
+with open(config.AIPunctuationLog, 'w', encoding='utf-8') as file:
     file.write('')
 
 debug_text = ""
@@ -56,9 +56,6 @@ srt_content = read_srt_file(inputfile)
 
 # 解析字幕文件
 subtitles = parse_srt(srt_content)
-
-# 将结果以 JSON 格式输出到屏幕
-#print(json.dumps(subtitles, ensure_ascii=False, indent=4))
 
 def check_subtitles(subtitles):
     # 新数组，用于存储连续的不符合条件的字幕对象
@@ -131,6 +128,7 @@ def group_array(arr):
     if current_group:
         groups.append(current_group)
 
+    # 過長的連續字串需分批切割餵給API
     split_index = 13
     index = 0
     while True:
@@ -387,11 +385,11 @@ def round_timestamps(subtitles):
 # 应用四舍五入函数
 rounded_subtitles = round_timestamps(merged_subtitles)
 
-with open('period_debug.txt', 'w', encoding='utf-8') as file:
+with open(config.AIPunctuationLog, 'w', encoding='utf-8') as file:
     file.write(debug_text)
 
 # 将处理后的字幕数据写入 JSON 文件
-with open('adjusted_subtitles.json', 'w', encoding='utf-8') as json_file:
+with open(config.AIPunctuationFile, 'w', encoding='utf-8') as json_file:
     json.dump(rounded_subtitles, json_file, ensure_ascii=False, indent=4)
 
-print("字幕数据已保存到 adjusted_subtitles.json 文件中。")
+print(f"字幕数据已保存到 {config.AIPunctuationFile} 文件中。")

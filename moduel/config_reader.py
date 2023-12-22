@@ -19,6 +19,14 @@ class Config:
         self.max_req_time = None
         self.lineArrange = None
 
+        self.workingFile = None
+        self.whisperFile = None
+        self.AIPunctuationLog = None
+        self.AIPunctuationFile = None
+        self.AITranslationLog = None
+        self.AITranslationFile = None
+        self.translatedSRT = None
+
 def load_config(file_path):
     config_parser = configparser.ConfigParser()
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -32,6 +40,14 @@ def load_config(file_path):
     config.AIModel = AImodelOpt[config_parser.getint('SETTING', 'AImodel')]
     config.forceMatch = config_parser.getboolean('SETTING', 'ForcedTimeStamp')
     config.maxReqTime = config_parser.getint('SETTING', 'MaxReqTime')
+
+    config.workingFile = config_parser.get('SETTING', 'workingFile').strip('"')
+    config.whisperFile = config_parser.get('SETTING', 'whisperFile').strip('"')
+    config.AIPunctuationLog = config_parser.get('SETTING', 'AIPunctuationLog').strip('"')
+    config.AIPunctuationFile = config_parser.get('SETTING', 'AIPunctuationFile').strip('"')
+    config.AITranslationLog = config_parser.get('SETTING', 'AITranslationLog').strip('"')
+    config.AITranslationFile = config_parser.get('SETTING', 'AITranslationFile').strip('"')
+    config.translatedSRT = config_parser.get('SETTING', 'translatedSRT').strip('"')
 
     return config
 
