@@ -8,6 +8,7 @@ Python 3.11.6
 PyTorch package
 CUDA package
 OpenAI Whisper
+
 Additionally, the use of OpenAI's API is required. Please register as an OpenAI member and apply for the API usage (charges apply). 
 The configuration file allows adjustments to the API model called. The default setting is recommended for lower costs. 
 For higher quality translations, you can change the API model yourself. For cost information, please refer to the OpenAI official website: 
