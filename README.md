@@ -8,9 +8,9 @@ This project provides the original Python and batch files for execution. Please 
 
 Python 3.11.6
 
-PyTorch package
+PyTorch 
 
-CUDA package
+CUDA toolkit
 
 OpenAI Whisper
 
