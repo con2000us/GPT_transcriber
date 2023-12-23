@@ -1,3 +1,5 @@
+Attention!! To avoid excessive costs due to API usage, be sure to set a budget limit for the API beforehand.
+
 This project develops a simple process to transcribe the spoken English in YouTube videos (video URL required) or local videos into subtitles. It also rephrases the content and translates it into Chinese subtitles.
 
 The main core functionalities of the project are written using ChatGPT-4, while the parameter transfer and debugging between each core module are handled manually.
@@ -5,8 +7,11 @@ The main core functionalities of the project are written using ChatGPT-4, while 
 This project provides the original Python and batch files for execution. Please prepare the necessary environment for running:
 
 Python 3.11.6
+
 PyTorch package
+
 CUDA package
+
 OpenAI Whisper
 
 Additionally, the use of OpenAI's API is required. Please register as an OpenAI member and apply for the API usage (charges apply). 
