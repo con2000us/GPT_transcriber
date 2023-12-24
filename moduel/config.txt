@@ -22,7 +22,7 @@ AImodel = 1
 ForcedTimeStamp = true
 
 # 強制GPT標準回應容許值 (對單一批次翻譯重送request次數上限)
-MaxReqTime = 5
+MaxReqTime = 3
 
 #########檔名設定 如無必要不須更動###########
 

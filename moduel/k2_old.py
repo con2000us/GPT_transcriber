@@ -39,90 +39,6 @@ batches = (total_sentences + sentences_per_batch - 1) // sentences_per_batch  # 
 translated_subtitles = []  # 存储翻译后的字幕
 
 debug_trans = ""
-
-def translteByLine(batch_subtitles, inputs, outputs):
-    debug_trans = ""
-    for idx, line in enumerate(inputs, start=1):
-        reTry = 0
-        while True:
-            token = line.split('##') 
-            print(f"----------- 逐行翻譯 {idx} / {len(inputs)}-----------")
-            print(f"-{line}-")
-
-            debug_trans += f"----------- 逐行翻譯 {idx} / {len(inputs)}-----------\n"
-            debug_trans += f"-{line}-\n"
-
-            # 步骤 2: 创建一个线程
-            thread = client.beta.threads.create()
-
-            # 步骤 3: 向线程添加一条消息
-            message = client.beta.threads.messages.create(
-                thread_id=thread.id,
-                role="user",
-                content=token[-1]
-            )
-
-            # 步骤 4: 运行助手
-            run = client.beta.threads.runs.create(
-                thread_id=thread.id,
-                assistant_id=assistant.id,
-                instructions="把內容翻譯成中文 並輸出成單一行"
-            )
-
-            # 检查运行状态
-            while True:
-                run = client.beta.threads.runs.retrieve(
-                    thread_id=thread.id,
-                    run_id=run.id
-                )
-                if run.status == 'completed':
-                    break
-                time.sleep(1)  # 等待一秒再次检查
-
-            # 步骤 5: 显示助手的回应并处理翻译结果
-            messages = client.beta.threads.messages.list(thread_id=thread.id)
-
-            for message in messages.data:
-                if message.role == "assistant":
-                    for content in message.content:
-                        if content.type == 'text':
-                            # 顯示翻譯進度
-                            text = content.text.value
-                            text = text.replace('\\(', '(').replace('\\)', ')')
-                            debug_trans += text + "\n"
-
-                            translated_text = content.text.value
-                            translated_sentences = [line for line in translated_text.split('\n') if line.strip()]
-
-                            if len(translated_sentences) == 1:
-                                print(f"----------------------------")
-                                print(f"{translated_sentences[0]}")
-                                debug_trans += f"{translated_sentences[0]}"
-
-                                # 將翻譯內容匹配回原文
-                                for subtitle in batch_subtitles:
-                                    if str(subtitle['start']) == str(token[0]):
-                                        subtitle['trans'] = translated_sentences[0]
-                                        print(f"***匹配成功***")
-                                        debug_trans += f"  ***匹配成功***"
-                                        translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
-                                        break                                       
-
-                                break
-                            else:
-                                print(f"------------輸出行數錯誤 重新測試----------------")
-                                debug_trans += f"------------輸出行數錯誤 重新測試----------------"
-                                reTry += 1
-                                if reTry < config.maxReqTime:
-                                    continue
-                                else:
-                                    print(f"------------已達最大錯誤次數----------------")
-                                    debug_trans += f"------------已達最大錯誤次數----------------"
-                                    break
-                    break
-            break
-    return debug_trans
-
 # 循环处理每个批次
 for batch in range(batches):
     currentReq = 0
@@ -132,6 +48,7 @@ for batch in range(batches):
         end_index = min(start_index + sentences_per_batch, total_sentences)  # 确保不超过字幕总数
         batch_subtitles = subtitles[start_index:end_index]
 
+        #print(json.dumps(batch_subtitles, ensure_ascii=False, indent=4))
         # 构建消息内容，包括字幕文本
         subtitles_text = "\n".join([f"{subtitle['start']}##{subtitle['text']}" for subtitle in batch_subtitles])
         # message_content = "##前面的數值與##本身不須更動並且必須保留 只將後面字串內容翻譯成繁體中文 並保持一句原文對應一句翻譯的中文關係. \n" + subtitles_text
@@ -185,7 +102,6 @@ for batch in range(batches):
                         debug_trans += text + "\n"
 
                         translated_text = content.text.value
-                        print(f"{translated_text}")
                         #translated_sentences = translated_text.split('\n')
                         translated_sentences = [line for line in translated_text.split('\n') if line.strip()]
 
@@ -205,18 +121,30 @@ for batch in range(batches):
                                 translated_sentences.pop(i)
                             i -= 1
 
-                        # 如果輸出行數一致 將翻譯字串匹配回原文
-                        inputLines = subtitles_text.split("\n")
-                        if len(translated_sentences) == len(inputLines):
-                            for trans_sentence in translated_sentences:
-                                if re.search(pattern, trans_sentence):
-                                    for subtitle in batch_subtitles:
-                                        #print(f"found ## in {trans_sentence}")
-                                        token = trans_sentence.split('##') 
-                                        if str(subtitle['start']) == str(token[0]) and len(token[1].strip()) > 0:
-                                            subtitle['trans'] = token[-1]
-                                            break  # 找到匹配项后跳出内层循环
-                                    translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
+                        
+                        for trans_sentence in translated_sentences:
+                            print(f"{trans_sentence}")                            
+                            if re.search(pattern, trans_sentence):
+                                for subtitle in batch_subtitles:
+                                    #print(f"found ## in {trans_sentence}")
+                                    token = trans_sentence.split('##') 
+                                    if str(subtitle['start']) == str(token[0]) and len(token[1].strip()) > 0:
+                                        subtitle['trans'] = token[-1]
+                                        break  # 找到匹配项后跳出内层循环
+                                translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
+                            else:
+                                if config.forceMatch and currentReq <= config.maxReqTime:
+                                    continue
+                                guess = 0
+                                while guess < sentences_per_batch and 'trans' in batch_subtitles[guess]:
+                                    guess += 1
+
+                                # fix it!
+                                if guess >= len(batch_subtitles):
+                                    guess = len(batch_subtitles)-1
+
+                                batch_subtitles[guess]['trans'] = trans_sentence
+                                translated_subtitles.append(batch_subtitles[guess])  # 将处理过的字幕添加到列表中
                 break
 
         # 檢查行數是否對應正確
@@ -224,8 +152,6 @@ for batch in range(batches):
         if len(translated_sentences) != len(inputLines):
             if currentReq >= config.maxReqTime:  # maxRetryLimit 是您設定的最大重試次數
                 print(f"{len(inputLines)} -> {len(translated_sentences)}翻譯行數不符，但已達到最大重試次數。")
-                print("*******強制使用API逐行翻譯*******")
-                debug_trans += translteByLine(batch_subtitles, inputLines, translated_subtitles)
                 break
 
             print(f"{len(inputLines)} -> {len(translated_sentences)}翻譯行數不符，正在重新嘗試...")
