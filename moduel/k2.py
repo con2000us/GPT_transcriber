@@ -25,7 +25,7 @@ client = OpenAI(
 # 步骤 1: 创建一个助手
 assistant = client.beta.assistants.create(
     name="John Doe",
-    instructions="你是個英語翻譯，負責翻譯英文轉成文句通暢的中文",
+    instructions="你是個翻譯，負責翻譯字幕轉成文句通暢的中文",
     model=config.AIModel
 )
 

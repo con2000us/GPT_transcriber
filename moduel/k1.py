@@ -101,10 +101,7 @@ def check_subtitles(subtitles):
 
     return continuous_subtitles
 
-# 示例：应用函数并显示结果
-problematic_subtitles = check_subtitles(subtitles)
 
-##########################################要處理文句過長沒分段問題############################################### 
 def group_array(arr):
 
     # 分组
@@ -142,6 +139,17 @@ def group_array(arr):
             break
 
     return groups
+
+##########################################處理文句過長沒分段問題############################################### 
+with open(config.workingFile, 'r') as file:
+    lng = json.load(file)['lng']
+
+# 示例：应用函数并显示结果
+if config.lineArrange and lng == 'en':
+    print(f"檢查標點符號是否缺失(僅限英文字句)")
+    problematic_subtitles = check_subtitles(subtitles)
+else:
+    problematic_subtitles = []
 
 if problematic_subtitles:
     grouped_objects = group_array(problematic_subtitles)
@@ -319,14 +327,6 @@ def split_subtitle(subtitle):
     else:
         return [subtitle]
 
-# 应用分割函数
-split_subtitles = []
-for subtitle in subtitles:
-    split_subtitles.extend(split_subtitle(subtitle))
-
-# 输出结果
-# print(json.dumps(split_subtitles, ensure_ascii=False, indent=4))
-
 def is_end_of_sentence(text):
     # 檢查文本是否以非縮寫的句號、驚嘆號或問號結尾
     return re.search(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)(?<!\bSt)\.(?!\w)|[!?。]$', text) is not None
@@ -362,12 +362,6 @@ def merge_subtitles(subtitles):
 
     return merged_subtitles
 
-# 应用合并函数
-merged_subtitles = merge_subtitles(split_subtitles)
-
-# 输出结果
-# print(json.dumps(merged_subtitles, ensure_ascii=False, indent=4))
-
 def round_timestamps(subtitles):
     rounded_subtitles = []
 
@@ -382,8 +376,20 @@ def round_timestamps(subtitles):
 
     return rounded_subtitles
 
-# 应用四舍五入函数
-rounded_subtitles = round_timestamps(merged_subtitles)
+# 应用分割函数
+if config.lineArrange and lng == 'en':
+    split_subtitles = []
+    for subtitle in subtitles:
+        split_subtitles.extend(split_subtitle(subtitle))
+
+    # 应用合并函数
+    merged_subtitles = merge_subtitles(split_subtitles)
+
+
+    # 应用四舍五入函数
+    rounded_subtitles = round_timestamps(merged_subtitles)
+else:
+    rounded_subtitles = subtitles
 
 with open(config.AIPunctuationLog, 'w', encoding='utf-8') as file:
     file.write(debug_text)

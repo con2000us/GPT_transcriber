@@ -41,6 +41,17 @@ def generate_vtt(audio_path, model_size="large"):
     model = whisper.load_model(config.whisperModel )
     result = model.transcribe(audio_path, verbose=False)
 
+    # 偵測影片語言
+    language_code = result["language"]
+    print(f"影片語言 : {language_code}")
+    # 打開並讀取 JSON 文件
+    with open(config.workingFile, 'r') as file:
+        data = json.load(file)
+
+    data['lng'] = language_code  # 替換為你想要的值
+    with open(config.workingFile, 'w') as file:
+        json.dump(data, file, indent=4)
+
     vtt_content = ""
 
     for segment in result["segments"]:
@@ -59,8 +70,13 @@ def main():
     # 检查是否存在 default.mp4
     if 'default.mp4' in media_files:
         selected_file = 'default.mp4'
+
+        selected_file_data = {
+            "file_name": selected_file,
+            "lng": "en"
+        }
         with open(config.workingFile, 'w') as file:
-            file.write(selected_file)
+            json.dump(selected_file_data, file, indent=4)
     if not media_files:
         print("沒有找到任何媒體檔案。")
         sys.exit(1)  # 非零退出状态码表示错误
@@ -77,8 +93,12 @@ def main():
             try:
                 selected_file = media_files[int(choice) - 1]
 
+                selected_file_data = {
+                    "file_name": selected_file,
+                    "lng": "en"
+                }
                 with open(config.workingFile, 'w') as file:
-                    file.write(selected_file)
+                    json.dump(selected_file_data, file, indent=4)
             except (IndexError, ValueError):
                 print("無效的選擇。")
                 return
@@ -86,7 +106,6 @@ def main():
     # 執行shell命令
     print("*****開始解析影片轉錄字幕*****")
     try:
-
         vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
 
         # 将生成的 VTT 内容写入文件

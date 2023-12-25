@@ -33,7 +33,7 @@ with open(config.AITranslationFile, 'r', encoding='utf-8') as file:
 #print(json.dumps(subtitles, ensure_ascii=False, indent=4))
 
 with open(config.workingFile, 'r') as file:
-    selected_file = file.read()
+    selected_file = json.load(file)['file_name']
 
 # 转换为 SRT 格式
 srt_content = convert_to_srt(subtitles)

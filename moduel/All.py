@@ -103,7 +103,9 @@ if not run_script('moduel/k1.py'):
     exit(1)
 
 with open(config.workingFile, 'r') as file:
-    selected_file = file.read()
+    #selected_file = file.read()
+    data = json.load(file)
+    selected_file = data['file_name']
 
 print("*****開始翻譯成中文*****")
 # 執行 k2.py
