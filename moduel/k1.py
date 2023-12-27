@@ -35,14 +35,16 @@ def parse_srt(file_content):
     for match in pattern.finditer(file_content):
         #print(match)
         start_str, end_str, text = match.groups()
-        start = time_to_seconds(start_str)
-        end = time_to_seconds(end_str)
-        subtitles.append({
-            "id": len(subtitles) + 1,
-            "start": start,
-            "end": end,
-            "text": text.replace('\n', ' ')
-        })
+        # 確保不是空字串再轉存
+        if len(text.replace('\n', ' ')) > 0:
+            start = time_to_seconds(start_str)
+            end = time_to_seconds(end_str)
+            subtitles.append({
+                "id": len(subtitles) + 1,
+                "start": start,
+                "end": end,
+                "text": text.replace('\n', ' ')
+            })
 
     return subtitles
 
@@ -202,8 +204,7 @@ def evalResult(text, lineNum):
         match = re.match(pattern, line)
         if match:
             fixed_line = re.sub(pattern, r"\1##", cleaned_line)
-            print(cleaned_line + "  匹配後結果 : ")
-            print(fixed_line + "\n")
+            print(cleaned_line + "  匹配完成\n")
             returnLines.append(fixed_line)
         else:
             print(cleaned_line + "  無匹配")

@@ -47,10 +47,11 @@ def translteByLine(batch_subtitles, inputs, outputs):
         while True:
             token = line.split('##') 
             print(f"----------- 逐行翻譯 {idx} / {len(inputs)}-----------")
-            print(f"-{line}-")
+            print(f"@{token[0]}")
+            print(f"{token[-1]}")
 
             debug_trans += f"----------- 逐行翻譯 {idx} / {len(inputs)}-----------\n"
-            debug_trans += f"-{line}-\n"
+            debug_trans += f"@{line}\n"
 
             # 步骤 2: 创建一个线程
             thread = client.beta.threads.create()
@@ -95,16 +96,15 @@ def translteByLine(batch_subtitles, inputs, outputs):
                             translated_sentences = [line for line in translated_text.split('\n') if line.strip()]
 
                             if len(translated_sentences) == 1:
-                                print(f"----------------------------")
                                 print(f"{translated_sentences[0]}")
-                                debug_trans += f"{translated_sentences[0]}"
+                                # debug_trans += f"{translated_sentences[0]}"
 
                                 # 將翻譯內容匹配回原文
                                 for subtitle in batch_subtitles:
                                     if str(subtitle['start']) == str(token[0]):
                                         subtitle['trans'] = translated_sentences[0]
                                         print(f"***匹配成功***")
-                                        debug_trans += f"  ***匹配成功***"
+                                        debug_trans += f"  ***匹配成功***\n"
                                         translated_subtitles.append(subtitle)  # 将处理过的字幕添加到列表中
                                         break                                       
 
