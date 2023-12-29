@@ -106,7 +106,7 @@ def main():
                 return
 
     # 執行shell命令
-    print("*****開始解析影片轉錄字幕*****")
+    # print("*****開始解析影片轉錄字幕*****")
     try:
         # vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
         vtt_text = generate_vtt(os.path.join(process_path,selected_file), model_size=config.whisperModel)
