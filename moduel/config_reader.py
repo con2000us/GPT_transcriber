@@ -18,6 +18,7 @@ class Config:
         self.forced_time_stamp = None
         self.max_req_time = None
         self.lineArrange = None
+        self.maxCharPerLine = None
 
         self.workingFile = None
         self.whisperFile = None
@@ -36,6 +37,7 @@ def load_config(file_path):
     config.whisperModel = whisperModelOpt[config_parser.getint('SETTING', 'WhisperModel')]
     config.lngDetctModel = whisperModelOpt[config_parser.getint('SETTING', 'LngDetctModel')]
     config.lineArrange = config_parser.getboolean('SETTING', 'LineArrangeEnable')
+    config.maxCharPerLine = config_parser.getint('SETTING', 'MaxCharPerLine')
     config.splitLineModel = AImodelOpt[config_parser.getint('SETTING', 'SplitLineModel')]
     config.AIModel = AImodelOpt[config_parser.getint('SETTING', 'AImodel')]
     config.forceMatch = config_parser.getboolean('SETTING', 'ForcedTimeStamp')

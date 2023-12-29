@@ -12,6 +12,9 @@ LngDetctModel = 3
 # 開啟斷句重組
 LineArrangeEnable = true
 
+# 開啟單句長度限制(字元)
+MaxCharPerLine = 130
+
 # 分句(加標點符號)模型選項 	0=gpt-3.5-turbo,	1=gpt-3.5-turbo-1106,	2=gpt-4,	3=gpt-4-1106-preview
 SplitLineModel = 1
 

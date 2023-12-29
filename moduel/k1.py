@@ -298,7 +298,7 @@ def split_subtitle(subtitle):
     end = subtitle['end']
 
     # 检查文本是否包含句号
-    if '. ' or '! ' or '? ' or '。' in text:
+    if '. ' in text or '! ' in text or '? ' in text or '。' in text:
         # 根据句号分割文本
         sentences = re.split(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)\. |[!?。] ', text)
         split_subtitles = []
@@ -308,21 +308,24 @@ def split_subtitle(subtitle):
         current_start = start
 
         for i, sentence in enumerate(sentences):
-            if i < len(sentences) - 1:  # 为除最后一个句子外的句子添加句号
-                sentence += '.'
-
             sentence_length = len(sentence)
-            proportion = sentence_length / total_length
-            current_end = current_start + proportion * (end - start)
+            # 确保不除以零
+            if total_length > 0 and sentence_length > 0:
+                proportion = sentence_length / total_length
+                current_end = current_start + proportion * (end - start)
 
-            # 创建新的字幕对象
-            split_subtitles.append({
-                "start": current_start,
-                "end": current_end,
-                "text": sentence.strip()
-            })
+                # 为除最后一个句子外的句子添加句号
+                if i < len(sentences) - 1:
+                    sentence += '.'
 
-            current_start = current_end
+                # 创建新的字幕对象
+                split_subtitles.append({
+                    "start": current_start,
+                    "end": current_end,
+                    "text": sentence.strip()
+                })
+
+                current_start = current_end
 
         return split_subtitles
     else:
@@ -333,7 +336,7 @@ def is_end_of_sentence(text):
     return re.search(r'(?<!\bMr)(?<!\bMrs)(?<!\bDr)(?<!\bMs)(?<!\bSt)\.(?!\w)|[!?。]$', text) is not None
 
 
-def merge_subtitles(subtitles):
+def merge_subtitles(subtitles, max_length=config.maxCharPerLine):
     merged_subtitles = []
     i = 0
 
@@ -346,14 +349,21 @@ def merge_subtitles(subtitles):
         start = current_subtitle['start']
         end = current_subtitle['end']
 
-        # 合并直到找到以句号结尾的文本
+        # 合併直到找到以句號結尾的文本或超過最大長度
         while not is_end_of_sentence(text) and i < len(subtitles) - 1:
-            i += 1
-            next_subtitle = subtitles[i]
-            text += ' ' + next_subtitle['text']
-            end = next_subtitle['end']
+            next_subtitle = subtitles[i + 1]
+            next_text = next_subtitle['text']
 
-        # 添加合并后的字幕
+            # 檢查合併後的長度
+            if len(text + ' ' + next_text) > max_length:
+                break
+
+            # 更新字幕信息
+            text += ' ' + next_text
+            end = next_subtitle['end']
+            i += 1
+
+        # 添加合併後的字幕
         merged_subtitles.append({
             "start": start,
             "end": end,
@@ -362,6 +372,7 @@ def merge_subtitles(subtitles):
         i += 1
 
     return merged_subtitles
+
 
 def round_timestamps(subtitles):
     rounded_subtitles = []
