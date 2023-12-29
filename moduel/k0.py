@@ -7,6 +7,7 @@ import json
 import config_reader
 
 config = config_reader.config
+process_path = os.path.join("process")
 
 def str_to_bool(s):
     return s.lower() in ['true', '1', 't', 'y', 'yes'] 
@@ -45,11 +46,11 @@ def generate_vtt(audio_path, model_size="large"):
     language_code = result["language"]
     print(f"影片語言 : {language_code}")
     # 打開並讀取 JSON 文件
-    with open(config.workingFile, 'r') as file:
+    with open(os.path.join(process_path,config.workingFile), 'r') as file:
         data = json.load(file)
 
     data['lng'] = language_code  # 替換為你想要的值
-    with open(config.workingFile, 'w') as file:
+    with open(os.path.join(process_path,config.workingFile), 'w') as file:
         json.dump(data, file, indent=4)
 
     vtt_content = ""
@@ -65,19 +66,20 @@ def generate_vtt(audio_path, model_size="large"):
 def main():
     directory = '.'  # 當前目錄
     media_files = scan_files(directory)
+    process_files = scan_files(process_path)
     selected_file = '';
 
     # 检查是否存在 default.mp4
-    if 'default.mp4' in media_files:
+    if 'default.mp4' in process_files:
         selected_file = 'default.mp4'
 
         selected_file_data = {
             "file_name": selected_file,
             "lng": "en"
         }
-        with open(config.workingFile, 'w') as file:
+        with open(os.path.join(process_path,config.workingFile), 'w') as file:
             json.dump(selected_file_data, file, indent=4)
-    if not media_files:
+    if not media_files and not process_files:
         print("沒有找到任何媒體檔案。")
         sys.exit(1)  # 非零退出状态码表示错误
         return
@@ -92,12 +94,12 @@ def main():
             choice = input("請選擇一個檔案（輸入數字）: ")
             try:
                 selected_file = media_files[int(choice) - 1]
-
+                shutil.move(selected_file, process_path)
                 selected_file_data = {
                     "file_name": selected_file,
                     "lng": "en"
                 }
-                with open(config.workingFile, 'w') as file:
+                with open(os.path.join(process_path,config.workingFile), 'w') as file:
                     json.dump(selected_file_data, file, indent=4)
             except (IndexError, ValueError):
                 print("無效的選擇。")
@@ -106,10 +108,13 @@ def main():
     # 執行shell命令
     print("*****開始解析影片轉錄字幕*****")
     try:
-        vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
+        # vtt_text = generate_vtt(selected_file, model_size=config.whisperModel)
+        vtt_text = generate_vtt(os.path.join(process_path,selected_file), model_size=config.whisperModel)
+
 
         # 将生成的 VTT 内容写入文件
-        with open(config.whisperFile, "w", encoding="utf-8") as file:
+        # with open(config.whisperFile, "w", encoding="utf-8") as file:
+        with open(os.path.join(process_path,config.whisperFile), "w", encoding="utf-8") as file:
             file.write(vtt_text)
 
     except subprocess.CalledProcessError as e:

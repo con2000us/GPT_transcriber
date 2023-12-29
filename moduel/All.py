@@ -10,6 +10,9 @@ import unicodedata
 
 config = config_reader.config
 
+process_path = os.path.join("process")
+os.makedirs(process_path, exist_ok=True)
+
 def run_script(script_name):
     try:
         subprocess.run(['python', script_name], check=True)
@@ -86,6 +89,7 @@ if url:
         # 下载视频
         print("正在下载视频，请稍候...")
         stream.download(filename="default.mp4")
+        shutil.move("default.mp4", process_path)
         print("下载完成！")
     except Exception as e:
         print("下载失败：", e)
@@ -94,20 +98,22 @@ else:
 
 
 # 執行 k0.py
+print(f"*****開始轉錄字幕***** | *****選用模型 {config.whisperModel}*****")
 if not run_script('moduel/k0.py'):
     exit(1)
 
-print("*****開始解讀字幕*****")
+print(f"*****開始解析字幕*****")
+
 # 執行 k1.py
 if not run_script('moduel/k1.py'):
     exit(1)
 
-with open(config.workingFile, 'r') as file:
+with open(os.path.join(process_path,config.workingFile), 'r') as file:
     #selected_file = file.read()
     data = json.load(file)
     selected_file = data['file_name']
 
-print("*****開始翻譯成中文*****")
+print(f"*****開始翻譯成中文***** | *****選用模型 {config.AIModel}*****")
 # 執行 k2.py
 if not run_script('moduel/k2.py'):
     exit(1)
@@ -130,24 +136,30 @@ os.makedirs(debug_path, exist_ok=True)
 #搬移其他中繼資料
 if video_title:
     try:
-        os.rename(selected_file, video_title+".mp4")
-        os.rename(os.path.splitext(selected_file)[0]+'.cht.srt', video_title+".cht.srt")
+        os.rename(os.path.join(process_path,selected_file), os.path.join(process_path,video_title+".mp4"))
+        os.rename(os.path.join(process_path,os.path.splitext(selected_file)[0]+'.cht.srt'), os.path.join(process_path,video_title+".cht.srt"))
     except FileNotFoundError:
         print(f"文件 {original_filename} 不存在。")
     except OSError as e:
         print(f"發生錯誤：{e}")
 
-    shutil.move(video_title+".mp4", output_path)
-    shutil.move(video_title+'.cht.srt', output_path)
+    try:
+        shutil.move(os.path.join(process_path,video_title+".mp4"), output_path)
+        shutil.move(os.path.join(process_path,video_title+'.cht.srt'), output_path)
+    except shutil.Error as e:
+        if "already exists" in str(e):
+            print("警告: 檔案已存在，操作將被忽略。")
+        else:
+            raise  # 如果是其他類型的錯誤，則重新拋出
 else:
-    shutil.move(selected_file, output_path)
-    shutil.move(os.path.splitext(selected_file)[0]+'.cht.srt', output_path)
+    shutil.move(os.path.join(process_path,selected_file), output_path)
+    shutil.move(os.path.join(process_path,os.path.splitext(selected_file)[0]+'.cht.srt'), output_path)
 
-shutil.move(config.AIPunctuationLog, debug_path)
-shutil.move(config.AIPunctuationFile, debug_path)
-shutil.move(config.workingFile, debug_path)
-shutil.move(config.AITranslationFile, debug_path)
-shutil.move(config.AITranslationLog, debug_path)
-shutil.move(config.whisperFile, debug_path)
+shutil.move(os.path.join(process_path,config.AIPunctuationLog), debug_path)
+shutil.move(os.path.join(process_path,config.AIPunctuationFile), debug_path)
+shutil.move(os.path.join(process_path,config.workingFile), debug_path)
+shutil.move(os.path.join(process_path,config.AITranslationFile), debug_path)
+shutil.move(os.path.join(process_path,config.AITranslationLog), debug_path)
+shutil.move(os.path.join(process_path,config.whisperFile), debug_path)
 
 print(f"字幕轉換處理完成")

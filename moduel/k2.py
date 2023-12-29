@@ -2,18 +2,20 @@
 ## output : config.AITranslationFile
 
 from openai import OpenAI
+import os
 import json
 import time
 import config_reader
 import re
 
 config = config_reader.config
+process_path = os.path.join("process")
 
 # 在开始翻译之前清空 trans.json 文件
-with open(config.AITranslationFile, 'w', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AITranslationFile), 'w', encoding='utf-8') as file:
     file.write('')
 
-with open(config.AITranslationLog, 'w', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AITranslationLog), 'w', encoding='utf-8') as file:
     file.write('')
 
 with open('moduel/API.key', 'r') as file:
@@ -29,7 +31,7 @@ assistant = client.beta.assistants.create(
     model=config.AIModel
 )
 
-with open(config.AIPunctuationFile, 'r', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AIPunctuationFile), 'r', encoding='utf-8') as file:
     subtitles = json.load(file)
 
 # 初始化变量
@@ -239,10 +241,10 @@ for batch in range(batches):
                 currentReq = 0
             break
 
-with open(config.AITranslationLog, 'a', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AITranslationLog), 'a', encoding='utf-8') as file:
     file.write(debug_trans)
 
 # 将翻译后的字幕追加写入 JSON 文件
-with open(config.AITranslationFile, 'a', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AITranslationFile), 'a', encoding='utf-8') as file:
     json.dump(translated_subtitles, file, ensure_ascii=False, indent=4)
 

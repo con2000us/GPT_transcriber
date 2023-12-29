@@ -7,6 +7,7 @@ import shutil
 import config_reader
 
 config = config_reader.config
+process_path = os.path.join("process")
 
 def convert_to_srt(json_data):
     srt_format = ""
@@ -25,19 +26,19 @@ def format_time(seconds):
     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02},{milliseconds:03}"
 
 # 读取 JSON 数据
-with open(config.AITranslationFile, 'r', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AITranslationFile), 'r', encoding='utf-8') as file:
     subtitles = json.load(file)
 
 # 处理嵌套的 JSON 结构
 #flattened_subtitles = [item for sublist in subtitles for item in sublist]
 #print(json.dumps(subtitles, ensure_ascii=False, indent=4))
 
-with open(config.workingFile, 'r') as file:
+with open(os.path.join(process_path,config.workingFile), 'r') as file:
     selected_file = json.load(file)['file_name']
 
 # 转换为 SRT 格式
 srt_content = convert_to_srt(subtitles)
 
 # 保存为 SRT 文件
-with open(os.path.splitext(selected_file)[0]+'.cht.srt', 'w', encoding='utf-8') as file:
+with open(os.path.join(process_path,os.path.splitext(selected_file)[0]+'.cht.srt'), 'w', encoding='utf-8') as file:
     file.write(srt_content)

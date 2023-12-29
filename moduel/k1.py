@@ -2,6 +2,7 @@
 ## output : config.AIPunctuationFile
 
 from openai import OpenAI
+import os
 import re
 import json
 import time
@@ -10,8 +11,9 @@ import config_reader
 config = config_reader.config
 
 inputfile = config.whisperFile
+process_path = os.path.join("process")
 
-with open(config.AIPunctuationLog, 'w', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AIPunctuationLog), 'w', encoding='utf-8') as file:
     file.write('')
 
 debug_text = ""
@@ -50,7 +52,7 @@ def parse_srt(file_content):
 
 def read_srt_file(filename):
     """从文件中读取 SRT 内容"""
-    with open(filename, 'r', encoding='utf-8') as file:
+    with open(os.path.join(process_path,filename), 'r', encoding='utf-8') as file:
         return file.read()
 
 # 读取字幕文件
@@ -143,7 +145,7 @@ def group_array(arr):
     return groups
 
 ##########################################處理文句過長沒分段問題############################################### 
-with open(config.workingFile, 'r') as file:
+with open(os.path.join(process_path,config.workingFile), 'r') as file:
     lng = json.load(file)['lng']
 
 # 示例：应用函数并显示结果
@@ -204,7 +206,7 @@ def evalResult(text, lineNum):
         match = re.match(pattern, line)
         if match:
             fixed_line = re.sub(pattern, r"\1##", cleaned_line)
-            print(cleaned_line + "  匹配完成\n")
+            print(cleaned_line + "  匹配完成")
             returnLines.append(fixed_line)
         else:
             print(cleaned_line + "  無匹配")
@@ -275,7 +277,9 @@ for idx, group in enumerate(grouped_objects, start=1):
                         print(adj_text + f"\n建議行數 : {len(group)}\n")
                         fixed_sentences = evalResult(adj_sentences,len(group))
                         print("...................................................................")
-                        print(f"{fixed_sentences}\n合法行數 : {len(fixed_sentences)}\n")
+                        for sentence in fixed_sentences:
+                            print(sentence)
+                        print(f"\n合法行數 : {len(fixed_sentences)}\n")
                         #update_subtitles(subtitles, adj_sentences)
                         if len(fixed_sentences) == len(group):
                             update_subtitles(subtitles, fixed_sentences)
@@ -403,11 +407,11 @@ if config.lineArrange and lng == 'en':
 else:
     rounded_subtitles = subtitles
 
-with open(config.AIPunctuationLog, 'w', encoding='utf-8') as file:
+with open(os.path.join(process_path,config.AIPunctuationLog), 'w', encoding='utf-8') as file:
     file.write(debug_text)
 
 # 将处理后的字幕数据写入 JSON 文件
-with open(config.AIPunctuationFile, 'w', encoding='utf-8') as json_file:
+with open(os.path.join(process_path,config.AIPunctuationFile), 'w', encoding='utf-8') as json_file:
     json.dump(rounded_subtitles, json_file, ensure_ascii=False, indent=4)
 
 print(f"字幕数据已保存到 {config.AIPunctuationFile} 文件中。")
