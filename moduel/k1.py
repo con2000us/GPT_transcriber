@@ -393,6 +393,7 @@ def round_timestamps(subtitles):
     return rounded_subtitles
 
 # 应用分割函数
+# if config.lineArrange and lng == 'en':
 if config.lineArrange and lng == 'en':
     split_subtitles = []
     for subtitle in subtitles:

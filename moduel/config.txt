@@ -15,17 +15,17 @@ LineArrangeEnable = true
 # 開啟單句長度限制(字元)
 MaxCharPerLine = 130
 
-# 分句(加標點符號)模型選項 	0=gpt-3.5-turbo,	1=gpt-3.5-turbo-1106,	2=gpt-4,	3=gpt-4-1106-preview
+# 分句(加標點符號)模型選項 	0=gpt-3.5-turbo,	1=gpt-3.5-turbo-1106,	2=gpt-4,	3=gpt-4-1106-preview,	4=gpt-4-0125-preview
 SplitLineModel = 1
 
-# 翻譯模型選項 			0=gpt-3.5-turbo,	1=gpt-3.5-turbo-1106,	2=gpt-4,	3=gpt-4-1106-preview
+# 翻譯模型選項 			0=gpt-3.5-turbo,	1=gpt-3.5-turbo-1106,	2=gpt-4,	3=gpt-4-1106-preview,	4=gpt-4-0125-preview
 AImodel = 1
 
 # 強制GPT標準回應 (如果回應不符則重新提request)
 ForcedTimeStamp = true
 
 # 強制GPT標準回應容許值 (對單一批次翻譯重送request次數上限)
-MaxReqTime = 3
+MaxReqTime = 5
 
 #########檔名設定 如無必要不須更動###########
 

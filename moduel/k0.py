@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import whisper
+import shutil
 from datetime import timedelta
 import json
 import config_reader
